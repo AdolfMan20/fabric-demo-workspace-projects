@@ -1,0 +1,299 @@
+Fabric Project 1 - Metadata Driven Incremental ETL Framework
+1. Project Overview
+Objective
+Build a reusable Microsoft Fabric Pipeline capable of:
+•	Reading metadata from a configuration table.
+•	Processing multiple source tables automatically.
+•	Performing Incremental Loads using Watermarks.
+•	Performing Full Loads when incremental loading is unavailable.
+•	Dynamically determining:
+o	Source Table
+o	Target Table
+o	Watermark Column
+o	Loading Strategy
+The pipeline is metadata-driven, meaning that adding a new table requires only metadata insertion, not pipeline modification.
+________________________________________
+2. Business Problem
+Suppose a company has many source tables:
+Customers
+Orders
+Products
+OrderDetails
+Territories
+The company wants:
+•	One Pipeline.
+•	One reusable framework.
+•	Incremental loading where possible.
+•	Full refresh for tables without watermarks.
+•	No hardcoded table names.
+________________________________________
+3. Architecture
+ConfigTable
+      │
+      ▼
+MainLookup
+      │
+      ▼
+ForEach (Sequential)
+      │
+      ▼
+InnerLookup (Watermark)
+      │
+      ▼
+If Condition
+
+TRUE Branch
+    Incremental Copy
+    ↓
+    Update Watermark
+
+FALSE Branch
+    Delete Target
+    ↓
+    Full Copy
+________________________________________
+4. Metadata Tables
+ConfigTable
+Stores metadata for each source.
+Column	Description
+SourceTable	Source table name
+TargetTable	Destination table
+WatermarkColumn	Incremental column
+IsIncremental	True / False
+IsActive	Active flag
+Example:
+SourceTable	TargetTable	WatermarkColumn	IsIncremental	IsActive
+Customers	Customers_Target	ModifiedDate	True	True
+Orders	Orders_Target	ModifiedDate	True	True
+Products	Products_Target	ModifiedDate	False	True
+OrderDetails	OrderDetails_Target	ModifiedDate	True	True
+Territories	Territories_Target	ModifiedDate	True	True
+________________________________________
+WatermarkTable
+Stores the last processed timestamp.
+TableName	LastExecDate
+Customers	2026-06-15
+Orders	2026-06-10
+Products	1900-01-01
+OrderDetails	2026-06-12
+Territories	2026-06-08
+________________________________________
+5. Main Lookup
+Query:
+SELECT *
+FROM ConfigTable
+WHERE IsActive = 1
+Returns:
+[
+ {
+   "SourceTable":"Customers",
+   "TargetTable":"Customers_Target",
+   "WatermarkColumn":"ModifiedDate",
+   "IsIncremental":true
+ }
+]
+________________________________________
+6. ForEach
+Items:
+@activity('MainLookup').output.value
+Purpose:
+Loop through every active table automatically.
+________________________________________
+7. Inner Lookup
+Purpose:
+Retrieve the watermark for the current table.
+Dynamic query:
+@concat(
+'SELECT LastExecDate
+FROM WatermarkTable
+WHERE TableName = ''',
+item().SourceTable,
+''''
+)
+Example:
+Iteration:
+Customers
+Generated query:
+SELECT LastExecDate
+FROM WatermarkTable
+WHERE TableName = 'Customers'
+Output:
+{
+  "firstRow":
+  {
+     "LastExecDate":"2026-06-01T00:00:00Z"
+  }
+}
+________________________________________
+8. If Condition
+Expression:
+@equals(item().IsIncremental,true)
+If:
+True
+go to:
+Incremental Branch
+If:
+False
+go to:
+Full Load Branch
+________________________________________
+9. TRUE Branch - Incremental Load
+Source Query:
+@concat(
+'SELECT * FROM ',
+item().SourceTable,
+' WHERE ModifiedDate > ''',
+activity('InnerLookup').output.firstRow.LastExecDate,
+''''
+)
+Generated:
+SELECT *
+FROM Customers
+WHERE ModifiedDate > '2026-06-01'
+________________________________________
+Destination:
+Schema:
+dbo
+Table:
+@item().TargetTable
+Example:
+Customers_Target
+________________________________________
+10. Watermark Update
+After successful copy:
+Script:
+@concat(
+'UPDATE WatermarkTable
+SET LastExecDate =
+(
+SELECT MAX(ModifiedDate)
+FROM ',
+item().SourceTable,
+')
+WHERE TableName = ''',
+item().SourceTable,
+''''
+)
+Generated:
+UPDATE WatermarkTable
+SET LastExecDate =
+(
+    SELECT MAX(ModifiedDate)
+    FROM Customers
+)
+WHERE TableName='Customers'
+________________________________________
+11. FALSE Branch - Full Refresh
+Some tables do not have:
+•	ModifiedDate
+•	LastUpdated
+•	CDC columns
+For these:
+First:
+Delete Target
+Script:
+@concat(
+'DELETE FROM ',
+item().TargetTable
+)
+Generated:
+DELETE FROM Products_Target
+________________________________________
+Then:
+Copy everything.
+Source:
+@concat(
+'SELECT * FROM ',
+item().SourceTable
+)
+Generated:
+SELECT *
+FROM Products
+________________________________________
+12. Duplicate Prevention Logic
+Incremental Tables
+Duplicates are prevented by:
+WHERE ModifiedDate > LastExecDate
+plus:
+UPDATE WatermarkTable
+after each successful load.
+________________________________________
+Full Load Tables
+Duplicates are prevented by:
+DELETE FROM TargetTable
+before copying.
+________________________________________
+13. Concurrency Issue Encountered
+Issue:
+Snapshot isolation transaction aborted due to update conflict
+Cause:
+Multiple iterations updating:
+WatermarkTable
+simultaneously.
+Solution:
+ForEach
+Sequential = True
+This guarantees:
+Customers
+    ↓
+Update Watermark
+
+Orders
+    ↓
+Update Watermark
+
+OrderDetails
+    ↓
+Update Watermark
+one at a time.
+________________________________________
+14. Test Results
+The pipeline was successfully tested with:
+Customers
+Orders
+Products
+OrderDetails
+Territories
+Test cases:
+Incremental
+Run 1 -> Load all rows
+
+Run 2 -> Load nothing
+
+Insert new record
+
+Run 3 -> Load only new rows
+
+Run 4 -> Load nothing
+Passed.
+________________________________________
+Full Load
+Run 1 -> Delete target + Copy all
+
+Run 2 -> Delete target + Copy all
+
+No duplicates created
+Passed.
+________________________________________
+15. Skills Demonstrated
+This project demonstrates:
+•	Fabric Pipelines
+•	Metadata Driven Architecture
+•	Lookup Activity
+•	ForEach Activity
+•	If Condition
+•	Dynamic Content Expressions
+•	Incremental Loading
+•	Watermarking
+•	Full Refresh Strategy
+•	Dynamic Source Tables
+•	Dynamic Target Tables
+•	Script Activities
+•	Warehouse Integration
+•	Pipeline Orchestration
+•	Concurrency Troubleshooting
+________________________________________
+Final Conclusion
+This project evolved from a simple exercise into a Metadata-Driven Incremental ETL Framework in Microsoft Fabric capable of processing multiple tables through a single reusable pipeline.
+The design is scalable and can be extended to dozens or even hundreds of tables simply by adding metadata entries, without modifying the pipeline itself.
+
