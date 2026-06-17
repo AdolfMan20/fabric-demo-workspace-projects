@@ -1,0 +1,236 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "type": "Copy",
+        "typeProperties": {
+          "source": {
+            "type": "DataWarehouseSource",
+            "sqlReaderQuery": {
+              "value": "SELECT *\r\nFROM my_data_source\r\nWHERE LastModifyTime > '@{activity('Lookup_OldWatermark').output.firstRow.WatermarkValue}'\r\n  AND LastModifyTime <= '@{activity('Lookup_NewWatermark').output.firstRow.NewWatermarkValue}'",
+              "type": "Expression"
+            },
+            "partitionOption": "None",
+            "queryTimeout": "02:00:00",
+            "datasetSettings": {
+              "type": "DataWarehouseTable",
+              "schema": [],
+              "linkedService": {
+                "name": "DWH_INCREMENTAL_LOADING_demo",
+                "properties": {
+                  "type": "DataWarehouse",
+                  "typeProperties": {
+                    "artifactId": "2eeaf47e-207d-bd0d-493d-4d2e8198ea5a",
+                    "endpoint": "xoj6dvkgbn6unhmvapvq2ajmii-pzcefqy3qk5ujaix2jbtxhzuoq.datawarehouse.fabric.microsoft.com",
+                    "workspaceId": "00000000-0000-0000-0000-000000000000"
+                  },
+                  "annotations": []
+                }
+              },
+              "annotations": []
+            }
+          },
+          "sink": {
+            "type": "DelimitedTextSink",
+            "formatSettings": {
+              "type": "DelimitedTextWriteSettings",
+              "fileExtension": ".txt"
+            },
+            "storeSettings": {
+              "type": "AzureBlobStorageWriteSettings"
+            },
+            "datasetSettings": {
+              "type": "DelimitedText",
+              "typeProperties": {
+                "location": {
+                  "type": "LakehouseLocation",
+                  "folderPath": "Demo_Incremental",
+                  "fileName": {
+                    "value": "@CONCAT('Demo_Incremental-', pipeline().RunId, '.txt')\n",
+                    "type": "Expression"
+                  }
+                },
+                "columnDelimiter": ",",
+                "quoteChar": "\"",
+                "escapeChar": "\\",
+                "firstRowAsHeader": true
+              },
+              "schema": [],
+              "linkedService": {
+                "name": "LH_INCREMENTAL_LOADING_demo",
+                "properties": {
+                  "type": "Lakehouse",
+                  "typeProperties": {
+                    "artifactId": "f038677d-0a5f-a4a7-4848-29c520375a34",
+                    "workspaceId": "00000000-0000-0000-0000-000000000000",
+                    "rootFolder": "Files"
+                  },
+                  "annotations": []
+                }
+              },
+              "annotations": []
+            }
+          },
+          "translator": {
+            "type": "TabularTranslator",
+            "typeConversion": true,
+            "typeConversionSettings": {
+              "allowDataTruncation": true,
+              "treatBooleanAsNumber": false
+            }
+          },
+          "enableStaging": false
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "Copy_Incremental",
+        "dependsOn": [
+          {
+            "activity": "Lookup_OldWatermark",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          },
+          {
+            "activity": "Lookup_NewWatermark",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Lookup",
+        "typeProperties": {
+          "source": {
+            "type": "DataWarehouseSource",
+            "partitionOption": "None",
+            "queryTimeout": "02:00:00"
+          },
+          "datasetSettings": {
+            "type": "DataWarehouseTable",
+            "typeProperties": {
+              "schema": "dbo",
+              "table": "watermark_table"
+            },
+            "schema": [],
+            "linkedService": {
+              "name": "DWH_INCREMENTAL_LOADING_demo",
+              "properties": {
+                "type": "DataWarehouse",
+                "typeProperties": {
+                  "artifactId": "2eeaf47e-207d-bd0d-493d-4d2e8198ea5a",
+                  "endpoint": "xoj6dvkgbn6unhmvapvq2ajmii-pzcefqy3qk5ujaix2jbtxhzuoq.datawarehouse.fabric.microsoft.com",
+                  "workspaceId": "00000000-0000-0000-0000-000000000000"
+                },
+                "annotations": []
+              }
+            },
+            "annotations": []
+          }
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "Lookup_OldWatermark",
+        "dependsOn": []
+      },
+      {
+        "type": "Lookup",
+        "typeProperties": {
+          "source": {
+            "type": "DataWarehouseSource",
+            "sqlReaderQuery": "SELECT MAX(LastModifyTime) AS NewWatermarkValue\nFROM my_data_source",
+            "partitionOption": "None",
+            "queryTimeout": "02:00:00"
+          },
+          "datasetSettings": {
+            "type": "DataWarehouseTable",
+            "schema": [],
+            "linkedService": {
+              "name": "DWH_INCREMENTAL_LOADING_demo",
+              "properties": {
+                "type": "DataWarehouse",
+                "typeProperties": {
+                  "artifactId": "2eeaf47e-207d-bd0d-493d-4d2e8198ea5a",
+                  "endpoint": "xoj6dvkgbn6unhmvapvq2ajmii-pzcefqy3qk5ujaix2jbtxhzuoq.datawarehouse.fabric.microsoft.com",
+                  "workspaceId": "00000000-0000-0000-0000-000000000000"
+                },
+                "annotations": []
+              }
+            },
+            "annotations": []
+          }
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "Lookup_NewWatermark",
+        "dependsOn": []
+      },
+      {
+        "type": "SqlServerStoredProcedure",
+        "typeProperties": {
+          "storedProcedureName": "[dbo].[usp_write_watermark]",
+          "storedProcedureParameters": {
+            "LastModifiedTime": {
+              "value": {
+                "value": "@{activity('Lookup_NewWatermark').output.firstRow.NewWatermarkValue}",
+                "type": "Expression"
+              },
+              "type": "DateTime"
+            },
+            "TableName": {
+              "value": {
+                "value": "@{activity('Lookup_OldWatermark').output.firstRow.TableName}",
+                "type": "Expression"
+              },
+              "type": "String"
+            }
+          }
+        },
+        "linkedService": {
+          "name": "DWH_INCREMENTAL_LOADING_demo",
+          "properties": {
+            "type": "DataWarehouse",
+            "typeProperties": {
+              "artifactId": "2eeaf47e-207d-bd0d-493d-4d2e8198ea5a",
+              "endpoint": "xoj6dvkgbn6unhmvapvq2ajmii-pzcefqy3qk5ujaix2jbtxhzuoq.datawarehouse.fabric.microsoft.com",
+              "workspaceId": "00000000-0000-0000-0000-000000000000"
+            },
+            "annotations": []
+          }
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "SP_WriteWatermark",
+        "dependsOn": [
+          {
+            "activity": "Copy_Incremental",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Warehouse",
+    "displayName": "DWH_INCREMENTAL_LOADING_demo",
+    "description": ""
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "2eeaf47e-207d-bd0d-493d-4d2e8198ea5a"
+  }
+}
