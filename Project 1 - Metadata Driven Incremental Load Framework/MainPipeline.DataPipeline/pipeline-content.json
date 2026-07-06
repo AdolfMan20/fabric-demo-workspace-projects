@@ -261,7 +261,7 @@
                   }
                 ]
               },
-              "name": "If Condition1",
+              "name": "If Condition",
               "dependsOn": [
                 {
                   "activity": "InnerLookup",
@@ -345,7 +345,7 @@
               "name": "WatermarkTable_Update_Script",
               "dependsOn": [
                 {
-                  "activity": "If Condition1",
+                  "activity": "If Condition",
                   "dependencyConditions": [
                     "Succeeded"
                   ]
