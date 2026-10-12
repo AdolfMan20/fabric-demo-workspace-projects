@@ -5,5 +5,6 @@ CREATE TABLE [dbo].[ConfigTable] (
 	[TargetTable] varchar(100) NULL, 
 	[WatermarkColumn] varchar(100) NULL, 
 	[IsIncremental] bit NULL, 
-	[IsActive] bit NULL
+	[IsActive] bit NULL, 
+	[UpsertKeyColumns] varchar(200) NULL
 );

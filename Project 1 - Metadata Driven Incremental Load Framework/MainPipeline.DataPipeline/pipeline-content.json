@@ -19,7 +19,7 @@
                 "type": "DataWarehouse",
                 "typeProperties": {
                   "artifactId": "cfc7db61-14a6-9a30-4de0-afcc6a220317",
-                  "endpoint": "xoj6dvkgbn6unhmvapvq2ajmii-pzcefqy3qk5ujaix2jbtxhzuoq.datawarehouse.fabric.microsoft.com",
+                  "endpoint": "y34gm6ykvvxuxot3ta75ogjppq-237c3ndiybkedgzkmgvweyteda.datawarehouse.fabric.microsoft.com",
                   "workspaceId": "00000000-0000-0000-0000-000000000000"
                 },
                 "annotations": []
@@ -76,7 +76,7 @@
                               "type": "DataWarehouse",
                               "typeProperties": {
                                 "artifactId": "cfc7db61-14a6-9a30-4de0-afcc6a220317",
-                                "endpoint": "xoj6dvkgbn6unhmvapvq2ajmii-pzcefqy3qk5ujaix2jbtxhzuoq.datawarehouse.fabric.microsoft.com",
+                                "endpoint": "y34gm6ykvvxuxot3ta75ogjppq-237c3ndiybkedgzkmgvweyteda.datawarehouse.fabric.microsoft.com",
                                 "workspaceId": "00000000-0000-0000-0000-000000000000"
                               },
                               "annotations": []
@@ -89,7 +89,14 @@
                         "type": "DataWarehouseSink",
                         "allowCopyCommand": true,
                         "copyCommandSettings": {},
-                        "writeBehavior": "Insert",
+                        "writeBehavior": "Upsert",
+                        "upsertSettings": {
+                          "keys": {
+                            "value": "@json(item().UpsertKeyColumns)",
+                            "type": "Expression"
+                          }
+                        },
+                        "disableMetricsCollection": false,
                         "datasetSettings": {
                           "type": "DataWarehouseTable",
                           "typeProperties": {
@@ -106,7 +113,7 @@
                               "type": "DataWarehouse",
                               "typeProperties": {
                                 "artifactId": "cfc7db61-14a6-9a30-4de0-afcc6a220317",
-                                "endpoint": "xoj6dvkgbn6unhmvapvq2ajmii-pzcefqy3qk5ujaix2jbtxhzuoq.datawarehouse.fabric.microsoft.com",
+                                "endpoint": "y34gm6ykvvxuxot3ta75ogjppq-237c3ndiybkedgzkmgvweyteda.datawarehouse.fabric.microsoft.com",
                                 "workspaceId": "00000000-0000-0000-0000-000000000000"
                               },
                               "annotations": []
@@ -157,7 +164,7 @@
                               "type": "DataWarehouse",
                               "typeProperties": {
                                 "artifactId": "cfc7db61-14a6-9a30-4de0-afcc6a220317",
-                                "endpoint": "xoj6dvkgbn6unhmvapvq2ajmii-pzcefqy3qk5ujaix2jbtxhzuoq.datawarehouse.fabric.microsoft.com",
+                                "endpoint": "y34gm6ykvvxuxot3ta75ogjppq-237c3ndiybkedgzkmgvweyteda.datawarehouse.fabric.microsoft.com",
                                 "workspaceId": "00000000-0000-0000-0000-000000000000"
                               },
                               "annotations": []
@@ -168,9 +175,11 @@
                       },
                       "sink": {
                         "type": "DataWarehouseSink",
+                        "preCopyScript": "@concat\n'TRUNCATE TABLE ',\nitem().TargetTable\n)",
                         "allowCopyCommand": true,
                         "copyCommandSettings": {},
                         "writeBehavior": "Insert",
+                        "disableMetricsCollection": false,
                         "datasetSettings": {
                           "type": "DataWarehouseTable",
                           "typeProperties": {
@@ -187,7 +196,7 @@
                               "type": "DataWarehouse",
                               "typeProperties": {
                                 "artifactId": "cfc7db61-14a6-9a30-4de0-afcc6a220317",
-                                "endpoint": "xoj6dvkgbn6unhmvapvq2ajmii-pzcefqy3qk5ujaix2jbtxhzuoq.datawarehouse.fabric.microsoft.com",
+                                "endpoint": "y34gm6ykvvxuxot3ta75ogjppq-237c3ndiybkedgzkmgvweyteda.datawarehouse.fabric.microsoft.com",
                                 "workspaceId": "00000000-0000-0000-0000-000000000000"
                               },
                               "annotations": []
@@ -242,9 +251,9 @@
                       "properties": {
                         "type": "DataWarehouse",
                         "typeProperties": {
-                          "artifactId": "cfc7db61-14a6-9a30-4de0-afcc6a220317",
-                          "endpoint": "xoj6dvkgbn6unhmvapvq2ajmii-pzcefqy3qk5ujaix2jbtxhzuoq.datawarehouse.fabric.microsoft.com",
-                          "workspaceId": "00000000-0000-0000-0000-000000000000"
+                          "artifactId": "b08db8c2-55d7-4f19-bcff-5c944e3ea6d7",
+                          "endpoint": "y34gm6ykvvxuxot3ta75ogjppq-237c3ndiybkedgzkmgvweyteda.datawarehouse.fabric.microsoft.com",
+                          "workspaceId": "b42dfed6-c068-4154-9b2a-61ab62626418"
                         },
                         "annotations": []
                       }
@@ -257,6 +266,8 @@
                       "secureOutput": false
                     },
                     "name": "Script1",
+                    "state": "Inactive",
+                    "onInactiveMarkAs": "Succeeded",
                     "dependsOn": []
                   }
                 ]
@@ -276,7 +287,10 @@
               "typeProperties": {
                 "source": {
                   "type": "DataWarehouseSource",
-                  "sqlReaderQuery": "SELECT LastExecDate\nFROM WatermarkTable\nWHERE TableName = '@{item().SourceTable}'",
+                  "sqlReaderQuery": {
+                    "value": "SELECT LastExecDate\nFROM WatermarkTable\nWHERE TableName = '@{item().SourceTable}'",
+                    "type": "Expression"
+                  },
                   "partitionOption": "None",
                   "queryTimeout": "02:00:00"
                 },
@@ -289,7 +303,7 @@
                       "type": "DataWarehouse",
                       "typeProperties": {
                         "artifactId": "cfc7db61-14a6-9a30-4de0-afcc6a220317",
-                        "endpoint": "xoj6dvkgbn6unhmvapvq2ajmii-pzcefqy3qk5ujaix2jbtxhzuoq.datawarehouse.fabric.microsoft.com",
+                        "endpoint": "y34gm6ykvvxuxot3ta75ogjppq-237c3ndiybkedgzkmgvweyteda.datawarehouse.fabric.microsoft.com",
                         "workspaceId": "00000000-0000-0000-0000-000000000000"
                       },
                       "annotations": []
@@ -329,7 +343,7 @@
                   "type": "DataWarehouse",
                   "typeProperties": {
                     "artifactId": "cfc7db61-14a6-9a30-4de0-afcc6a220317",
-                    "endpoint": "xoj6dvkgbn6unhmvapvq2ajmii-pzcefqy3qk5ujaix2jbtxhzuoq.datawarehouse.fabric.microsoft.com",
+                    "endpoint": "y34gm6ykvvxuxot3ta75ogjppq-237c3ndiybkedgzkmgvweyteda.datawarehouse.fabric.microsoft.com",
                     "workspaceId": "00000000-0000-0000-0000-000000000000"
                   },
                   "annotations": []
